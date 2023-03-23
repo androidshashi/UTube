@@ -14,7 +14,7 @@
         android:theme="@style/Theme.UTube"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".view.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,6 +26,7 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+        <service android:name=".view.FloatingWindowGFG"/>
     </application>
 
 </manifest>
