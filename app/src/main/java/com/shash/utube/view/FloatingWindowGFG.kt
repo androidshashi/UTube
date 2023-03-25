@@ -191,12 +191,8 @@ class FloatingWindowGFG : Service() {
             }
         })
 
-        //Floating Window Layout Flag is set to FLAG_NOT_FOCUSABLE, so no input is possible to the EditText. But that's a problem.
-        //So, the problem is solved here. The Layout Flag is changed when the EditText is touched.
-//        moveBtn?.setOnTouchListener { v, _ ->
-//            updateWindowSize()
-//            false
-//        }
+
+
     }
 
     private fun updateWindowSize(h:Float=0.18f, w:Float=0.45f,keyboard:Boolean=false){
@@ -230,4 +226,5 @@ class FloatingWindowGFG : Service() {
         //Window is removed from the screen
         windowManager!!.removeView(floatView)
     }
+
 }
