@@ -1,8 +1,11 @@
 package com.shash.utube.view
 
-import android.app.Service
+import android.app.*
+import android.app.PendingIntent.FLAG_IMMUTABLE
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
@@ -13,9 +16,12 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationCompat
 import com.shash.utube.R
 import com.shash.utube.utils.Common
 import com.shash.utube.utils.MyBrowser
+
 
 class FloatingWindowGFG : Service() {
     //The reference variables for the
@@ -33,9 +39,72 @@ class FloatingWindowGFG : Service() {
     private  var height:Int  =0
     private  var width:Int  =0
 
+    companion object{
+        const val channelID = "Utube_service_channel"
+        const val title = "Utube is running..."
+        const val text = "Enjoy in background."
+    }
+
     //As FloatingWindowGFG inherits Service class, it actually overrides the onBind method
     override fun onBind(intent: Intent): IBinder? {
         return null
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        generateForegroundNotification()
+        return START_STICKY
+
+        //Normal Service To test sample service comment the above    generateForegroundNotification() && return START_STICKY
+        // Uncomment below return statement And run the app.
+//        return START_NOT_STICKY
+    }
+
+    //Notififcation for ON-going
+    private var iconNotification: Bitmap? = null
+    private var notification: Notification? = null
+    var mNotificationManager: NotificationManager? = null
+    private val mNotificationId = 123333
+
+    private fun generateForegroundNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val intentMainLanding = Intent(this, MainActivity::class.java)
+            val pendingIntent =
+                PendingIntent.getActivity(this, 0, intentMainLanding, FLAG_IMMUTABLE)
+            iconNotification = BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
+            if (mNotificationManager == null) {
+                mNotificationManager = this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                assert(mNotificationManager != null)
+                mNotificationManager?.createNotificationChannelGroup(
+                    NotificationChannelGroup("Utube", "bg")
+                )
+                val notificationChannel =
+                    NotificationChannel(
+                        channelID, "Service Notifications",
+                        NotificationManager.IMPORTANCE_HIGH)
+                notificationChannel.enableLights(false)
+                notificationChannel.lockscreenVisibility = Notification.VISIBILITY_SECRET
+                mNotificationManager?.createNotificationChannel(notificationChannel)
+            }
+            val builder = NotificationCompat.Builder(this, channelID)
+
+            builder.setContentTitle(StringBuilder(resources.getString(R.string.app_name)).append(" is running").toString())
+                .setContentText("Enjoy...") //                    , swipe down for more options.
+                .setSmallIcon(R.drawable.ic_max)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setWhen(0)
+                .setOnlyAlertOnce(true)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+            if (iconNotification != null) {
+                builder.setLargeIcon(Bitmap.createScaledBitmap(iconNotification!!, 128, 128, false))
+            }
+            builder.color = resources.getColor(R.color.purple_200)
+            notification = builder.build()
+            startForeground(mNotificationId, notification)
+        }
+
     }
 
     override fun onCreate() {

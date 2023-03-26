@@ -2,8 +2,10 @@ package com.shash.utube.utils
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.app.ActivityManager
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
@@ -11,8 +13,31 @@ import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat.getSystemService
 import com.shash.utube.utils.Constants.YOUTUBE_URL
+import com.shash.utube.view.FloatingWindowGFG
 
+
+ fun Activity.isMyServiceRunning(): Boolean {
+    // The ACTIVITY_SERVICE is needed to retrieve a
+    // ActivityManager for interacting with the global system
+    // It has a constant String value "activity".
+    val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+
+    // A loop is needed to get Service information that are currently running in the System.
+    // So ActivityManager.RunningServiceInfo is used. It helps to retrieve a
+    // particular service information, here its this service.
+    // getRunningServices() method returns a list of the services that are currently running
+    // and MAX_VALUE is 2147483647. So at most this many services can be returned by this method.
+    for (service in manager!!.getRunningServices(Int.MAX_VALUE)) {
+
+        // If this service is found as a running, it will return true or else false.
+        if (FloatingWindowGFG::class.java.name == service.service.className) {
+            return true
+        }
+    }
+    return false
+}
 
 @RequiresApi(Build.VERSION_CODES.M)
 fun Activity.requestOverlayDisplayPermission() {
