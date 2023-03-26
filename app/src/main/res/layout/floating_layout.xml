@@ -40,21 +40,21 @@
             android:paddingVertical="5dp"
             android:src="@drawable/ic_close" />
         <ImageView
-            android:id="@+id/minimizeIV"
+            android:id="@+id/backIV"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingVertical="5dp"
-            android:src="@drawable/ic_minimize" />
+            android:src="@drawable/ic_back" />
 
         <ImageView
-            android:id="@+id/maximizeIV"
+            android:id="@+id/toggleIV"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@android:color/holo_blue_light"
             android:paddingVertical="5dp"
-            android:src="@drawable/ic_max" />
+            android:src="@drawable/ic_minimize" />
 
 
         <ImageView

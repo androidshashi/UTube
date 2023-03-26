@@ -4,26 +4,18 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.annotation.Nullable
+import com.monstertechno.adblocker.AdBlockerWebView
 import com.shash.utube.adblocker.AdBlocker
 
 
-class MyBrowser : WebViewClient() {
-    override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
-        view.loadUrl(url)
-        return true
-    }
-
-    private val loadedUrls: MutableMap<String, Boolean> = HashMap()
+open class MyBrowser : WebViewClient() {
 
     @Nullable
     override fun shouldInterceptRequest(view: WebView, url: String): WebResourceResponse? {
-        val ad: Boolean
-        if (!loadedUrls.containsKey(url)) {
-            ad = AdBlocker.isAd(url)
-            loadedUrls[url] = ad
-        } else {
-            ad = loadedUrls[url]!!
-        }
-        return if (ad) AdBlocker.createEmptyResource() else super.shouldInterceptRequest(view, url)
+        return if (AdBlockerWebView.blockAds(
+                view,
+                url
+            )
+        ) AdBlocker.createEmptyResource() else super.shouldInterceptRequest(view, url)
     }
 }
