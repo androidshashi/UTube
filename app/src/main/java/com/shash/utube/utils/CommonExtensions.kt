@@ -17,7 +17,20 @@ import androidx.core.content.ContextCompat.getSystemService
 import com.shash.utube.utils.Constants.YOUTUBE_URL
 import com.shash.utube.view.FloatingWindowGFG
 
+/**
+ * Share MULTIPLE the file
+ */
+const val WA_PACKAGE="com.whatsapp"
+fun Context.shareText(text: String) {
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, text)
+        type = "text/plain"
+    }
 
+    val shareIntent = Intent.createChooser(sendIntent, null)
+    startActivity(shareIntent)
+}
  fun Activity.isMyServiceRunning(): Boolean {
     // The ACTIVITY_SERVICE is needed to retrieve a
     // ActivityManager for interacting with the global system

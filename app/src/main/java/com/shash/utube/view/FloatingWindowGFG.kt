@@ -11,7 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.*
-import android.view.View.OnTouchListener
+import android.view.View.*
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -41,6 +41,7 @@ class FloatingWindowGFG : Service() {
     private var height: Int = 0
     private var width: Int = 0
     private var isMinimized = false
+    private var onlyButtons = false
 
     companion object {
         const val channelID = "Utube_service_channel"
@@ -118,7 +119,7 @@ class FloatingWindowGFG : Service() {
     override fun onCreate() {
         super.onCreate()
 
-        initViews();
+        initViews()
 
         listeners();
 
@@ -139,6 +140,8 @@ class FloatingWindowGFG : Service() {
         // if you want to enable zoom feature
         webView?.settings?.setSupportZoom(true)
 
+        webView?.settings?.domStorageEnabled = true;
+
         Log.d("Current url", Common.currentUrl)
 
         //Just like MainActivity, the url in Maximized will stay
@@ -148,6 +151,7 @@ class FloatingWindowGFG : Service() {
 
     private fun listeners() {
         toggleBtn?.setOnClickListener {
+            webView?.visibility = VISIBLE
             if (isMinimized) {
                 updateWindowSize(h = 1.0f, w = 1.0f, keyboard = true)
                 isMinimized = false
@@ -158,6 +162,19 @@ class FloatingWindowGFG : Service() {
                 toggleBtn?.setImageResource(R.drawable.ic_max)
             }
 
+        }
+
+        toggleBtn?.setOnLongClickListener {
+            if(onlyButtons){
+                webView?.visibility = VISIBLE
+
+            }else{
+                webView?.visibility = GONE
+            }
+
+            onlyButtons = !onlyButtons
+
+            true
         }
 
         backBtn?.setOnClickListener {
