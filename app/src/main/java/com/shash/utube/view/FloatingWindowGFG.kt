@@ -4,25 +4,26 @@ import android.app.*
 import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.PixelFormat
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.*
 import android.view.View.*
-import android.webkit.WebChromeClient
+import android.webkit.JsResult
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ImageView
-import android.widget.ProgressBar
-import androidx.annotation.RequiresApi
+import android.widget.RelativeLayout
 import androidx.core.app.NotificationCompat
-import com.monstertechno.adblocker.AdBlockerWebView
+import androidx.core.content.ContextCompat
 import com.shash.utube.R
-import com.shash.utube.utils.Common
-import com.shash.utube.utils.MyBrowser
+import com.shash.utube.utils.*
+import com.shash.utube.utils.VideoEnabledWebChromeClient.ToggledFullscreenCallback
 
 
 class FloatingWindowGFG : Service() {
@@ -36,12 +37,15 @@ class FloatingWindowGFG : Service() {
     private var backBtn: ImageView? = null
     private var moveBtn: ImageView? = null
     private var closeBtn: ImageView? = null
-    private var webView: WebView? = null
-    private var progressBar: ProgressBar? = null
+    private var webView: VideoEnabledWebView? = null
     private var height: Int = 0
     private var width: Int = 0
     private var isMinimized = false
     private var onlyButtons = false
+    private lateinit var nonVideoLayout: RelativeLayout
+    private lateinit var videoLayout: RelativeLayout
+    private lateinit var loadingView: View
+    private var mWebChromeClient: VideoEnabledWebChromeClient? = null
 
     companion object {
         const val channelID = "Utube_service_channel"
@@ -128,19 +132,62 @@ class FloatingWindowGFG : Service() {
 
     private fun initWebView() {
 
-        AdBlockerWebView.init(this).initializeWebView(webView)
+        mWebChromeClient = object : VideoEnabledWebChromeClient(
+            nonVideoLayout, videoLayout, loadingView, webView // See all available constructors...
+        ) {
+            // Subscribe to standard events, such as onProgressChanged()...
+            override fun onProgressChanged(view: WebView, progress: Int) {
+                // Your code...
+            }
 
-        webView?.webChromeClient = WebChromeClient()
+            override fun onJsAlert(
+                view: WebView?,
+                url: String?,
+                message: String?,
+                result: JsResult?
+            ): Boolean {
+                //Required functionality here
+                return super.onJsAlert(view, url, message, result)
+            }
+        }
+        mWebChromeClient?.setOnToggledFullscreen { fullscreen -> // Your code to handle the full-screen change, for example showing and hiding the title bar. Example:
+            if (fullscreen) {
 
-        webView?.webViewClient =  MyBrowser()
+                floatWindowLayoutParam?.flags =
+                    floatWindowLayoutParam?.flags?.or(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                floatWindowLayoutParam?.flags =
+                    floatWindowLayoutParam?.flags?.or(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                windowManager?.updateViewLayout(floatView, floatWindowLayoutParam)
+
+            } else {
+
+                floatWindowLayoutParam?.flags =
+                    floatWindowLayoutParam?.flags?.and(WindowManager.LayoutParams.FLAG_FULLSCREEN.inv())
+                floatWindowLayoutParam?.flags =
+                    floatWindowLayoutParam?.flags?.and(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON.inv())
+                windowManager?.updateViewLayout(floatView, floatWindowLayoutParam)
+
+            }
+        }
+
+
+
+
+        webView?.apply {
+            webChromeClient = mWebChromeClient
+            webViewClient =  InsideWebViewClient()
+        }
 
         // this will enable the javascript settings, it can also allow xss vulnerabilities
-        webView?.settings?.javaScriptEnabled = true
+        webView?.settings?.apply{
 
-        // if you want to enable zoom feature
-        webView?.settings?.setSupportZoom(true)
-
-        webView?.settings?.domStorageEnabled = true;
+            javaScriptEnabled = true
+            // if you want to enable zoom feature
+            setSupportZoom(true)
+            // on below line setting file access to true.
+            allowFileAccess = true;
+            domStorageEnabled = true;
+        }
 
         Log.d("Current url", Common.currentUrl)
 
@@ -149,19 +196,23 @@ class FloatingWindowGFG : Service() {
 
     }
 
+    private fun toggleView(){
+        webView?.visibility = VISIBLE
+        if (isMinimized) {
+            updateWindowSize(h = 1.0f, w = 1.0f, keyboard = true)
+            isMinimized = false
+            toggleBtn?.setImageResource(R.drawable.ic_minimize)
+        } else {
+            updateWindowSize()
+            isMinimized = true
+            toggleBtn?.setImageResource(R.drawable.ic_max)
+        }
+    }
+
     private fun listeners() {
         toggleBtn?.setOnClickListener {
-            webView?.visibility = VISIBLE
-            if (isMinimized) {
-                updateWindowSize(h = 1.0f, w = 1.0f, keyboard = true)
-                isMinimized = false
-                toggleBtn?.setImageResource(R.drawable.ic_minimize)
-            } else {
-                updateWindowSize()
-                isMinimized = true
-                toggleBtn?.setImageResource(R.drawable.ic_max)
-            }
 
+            toggleView()
         }
 
         toggleBtn?.setOnLongClickListener {
@@ -225,7 +276,49 @@ class FloatingWindowGFG : Service() {
         })
     }
 
+    inner class InsideWebViewClient() : WebViewClient() {
+        // Force links to be opened inside WebView and not in Default Browser
+        // Thanks http://stackoverflow.com/a/33681975/1815624
+        override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+            if (url.startsWith("whatsapp://")
+            ) {
+                val uri = Uri.parse(url)
+                val msg = uri.getQueryParameter("text")
+                val sendIntent = Intent()
+                sendIntent.action = Intent.ACTION_SEND
+                sendIntent.putExtra(Intent.EXTRA_TEXT, msg)
+                sendIntent.type = "text/plain"
+                sendIntent.flags = FLAG_ACTIVITY_NEW_TASK
+                sendIntent.setPackage(WA_PACKAGE)
+
+                view.goBack()
+                toggleView()
+                ContextCompat.startActivity(view.context, sendIntent, null)
+            } else if (url.startsWith("https://www.facebook.com/sharer.php") || url.startsWith(
+                    "https://twitter.com/share"
+                ) || url.startsWith(
+                    "https://plus.google.com/share"
+                )|| url.startsWith(
+                    "https://www.pinterest.com/pin/"
+                )|| url.startsWith(
+                    "https://www.linkedin.com"
+                )|| url.startsWith(
+                    "mailto:?"
+                )
+            ) {
+                view.context.shareText(url)
+                view.loadUrl(url)
+                return true
+            }
+            return false
+        }
+    }
+
+
+
     private fun initViews() {
+
+
         //The screen height and width are calculated, cause
         //the height and width of the floating window is set depending on this
         val metrics = applicationContext.resources.displayMetrics
@@ -248,7 +341,13 @@ class FloatingWindowGFG : Service() {
         closeBtn = floatView!!.findViewById(R.id.closeIV)
         moveBtn = floatView!!.findViewById(R.id.moveIV)
         webView = floatView!!.findViewById(R.id.webView)
-        progressBar = floatView!!.findViewById(R.id.progressBar)
+
+        nonVideoLayout = floatView!!.findViewById(R.id.nonVideoLayout) // Your own view, read class comments
+
+        videoLayout =
+            floatView!!.findViewById(R.id.videoLayout) // Your own view, read class comments
+        //noinspection all
+        loadingView= inflater.inflate(R.layout.view_loading_video, null)
 
         //WindowManager.LayoutParams takes a lot of parameters to set the
         //the parameters of the layout. One of them is Layout_type.
