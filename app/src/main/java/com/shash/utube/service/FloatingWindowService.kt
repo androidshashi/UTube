@@ -26,7 +26,8 @@ import com.shash.utube.utils.*
 import com.shash.utube.view.MainActivity
 
 /**
- * This class is responsible for Floating dialog in which YouTube website will be rendered
+ * This class is responsible for Floating dialog in which YouTube website will be rendered.
+ * This has been tested on few devices eg: samsung f62, vivo, honor 8x etc.
  * @author: AndroidShashi
  */
 class FloatingWindowService : Service() {
@@ -53,9 +54,7 @@ class FloatingWindowService : Service() {
     private var mWebChromeClient: VideoEnabledWebChromeClient? = null
 
     companion object {
-        const val channelID = "Utube_service_channel"
-        const val title = "Utube is running..."
-        const val text = "Enjoy YouTube in background."
+
     }
 
     //As FloatingWindowGFG inherits Service class, it actually overrides the onBind method
@@ -91,14 +90,14 @@ class FloatingWindowService : Service() {
                 )
                 val notificationChannel =
                     NotificationChannel(
-                        channelID, "Service Notifications",
+                        Constants.channelID, "Service Notifications",
                         NotificationManager.IMPORTANCE_HIGH
                     )
                 notificationChannel.enableLights(false)
                 notificationChannel.lockscreenVisibility = Notification.VISIBILITY_SECRET
                 mNotificationManager?.createNotificationChannel(notificationChannel)
             }
-            val builder = NotificationCompat.Builder(this, channelID)
+            val builder = NotificationCompat.Builder(this, Constants.channelID)
 
             builder.setContentTitle(
                 StringBuilder(resources.getString(R.string.app_name)).append(" is running")

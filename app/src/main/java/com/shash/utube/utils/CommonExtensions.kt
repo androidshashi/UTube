@@ -33,6 +33,10 @@ fun Context.shareText(text: String) {
     val shareIntent = Intent.createChooser(sendIntent, null)
     startActivity(shareIntent)
 }
+
+/**
+ * Checks for the background service status
+ */
 fun Activity.isMyServiceRunning(): Boolean {
     // The ACTIVITY_SERVICE is needed to retrieve a
     // ActivityManager for interacting with the global system
@@ -54,6 +58,10 @@ fun Activity.isMyServiceRunning(): Boolean {
     return false
 }
 
+
+/**
+ * Request overlay permission.
+ */
 @RequiresApi(Build.VERSION_CODES.M)
 fun Activity.requestOverlayDisplayPermission() {
     val dialog: Dialog
@@ -71,26 +79,29 @@ fun Activity.requestOverlayDisplayPermission() {
     builder.setMessage("Enable 'Display over other apps' from System Settings.")
 
     // The event of the Positive-Button is set
-    builder.setPositiveButton("Open Settings",
-        DialogInterface.OnClickListener { _, _ -> // The app will redirect to the 'Display over other apps' in Settings.
-            // This is an Implicit Intent. This is needed when any Action is needed
-            // to perform, here it is
-            // redirecting to an other app(Settings).
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
+    builder.setPositiveButton("Open Settings"
+    ) { _, _ -> // The app will redirect to the 'Display over other apps' in Settings.
+        // This is an Implicit Intent. This is needed when any Action is needed
+        // to perform, here it is
+        // redirecting to an other app(Settings).
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName")
+        )
 
-            // This method will start the intent. It takes two parameter,
-            // one is the Intent and the other is
-            // an requestCode Integer. Here it is -1.
-            startActivityForResult(intent, RESULT_OK)
-        })
+        // This method will start the intent. It takes two parameter,
+        // one is the Intent and the other is
+        // an requestCode Integer. Here it is -1.
+        startActivityForResult(intent, RESULT_OK)
+    }
     dialog = builder.create()
     // The Dialog will show in the screen
     dialog.show()
 }
 
+/**
+ * Checks for overlay permission
+ */
 fun Activity.checkOverlayDisplayPermission(): Boolean {
     // Android Version is lesser than Marshmallow
     // or the API is lesser than 23
@@ -104,18 +115,28 @@ fun Activity.checkOverlayDisplayPermission(): Boolean {
     }
 }
 
+/**
+ * Shows a toast
+ */
 fun Activity.showToast(text:String){
     Toast.makeText(this,text,Toast.LENGTH_SHORT).show()
 }
 
+/**
+ * Hides soft keyboard
+ */
 fun Fragment.hideKeyboard() {
     view?.let { activity?.hideKeyboard(it) }
 }
-
+/**
+ * Hides soft keyboard
+ */
 fun Activity.hideKeyboard() {
     hideKeyboard(currentFocus ?: View(this))
 }
-
+/**
+ * Hides soft keyboard
+ */
 fun Context.hideKeyboard(view: View) {
     val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
     inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
@@ -133,5 +154,8 @@ object Common {
 
 object Constants{
     var  YOUTUBE_URL = "https://youtube.com"
+    const val channelID = "Utube_service_channel"
+    const val title = "Utube is running..."
+    const val text = "Enjoy YouTube in background."
 }
 
