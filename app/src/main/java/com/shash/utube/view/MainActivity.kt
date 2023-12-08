@@ -7,10 +7,11 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
-import android.widget.ImageView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.shash.utube.R
+import com.shash.utube.service.FloatingWindowService
 
 class MainActivity : AppCompatActivity() {
     // The reference variables for the
@@ -18,6 +19,7 @@ class MainActivity : AppCompatActivity() {
     // classes are created
     private var minimizeBtn: Button? = null
     private var dialog: AlertDialog? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +29,20 @@ class MainActivity : AppCompatActivity() {
         // the corresponding component id used in layout file
         minimizeBtn = findViewById(R.id.minimizeIV)
 
+        if (checkOverlayDisplayPermission()) {
+            // FloatingWindowGFG service is started
+            if (!isMyServiceRunning){
+                startService(Intent(this@MainActivity, FloatingWindowService::class.java))
+            }
+            // The MainActivity closes here
+            finish()
+        } else {
+            // If permission is not given,
+            // it shows the AlertDialog box and
+            // redirects to the Settings
+            requestOverlayDisplayPermission()
+        }
+
         // The Main Button that helps to minimize the app
         minimizeBtn?.setOnClickListener {
             // First it confirms whether the
@@ -34,7 +50,7 @@ class MainActivity : AppCompatActivity() {
             if (checkOverlayDisplayPermission()) {
                 // FloatingWindowGFG service is started
                 if (!isMyServiceRunning){
-                    startService(Intent(this@MainActivity, FloatingWindowGFG::class.java))
+                    startService(Intent(this@MainActivity, FloatingWindowService::class.java))
                 }
                 // The MainActivity closes here
                 finish()
@@ -69,12 +85,13 @@ class MainActivity : AppCompatActivity() {
             for (service in manager.getRunningServices(Int.MAX_VALUE)) {
                 // If this service is found as a running,
                 // it will return true or else false.
-                if (FloatingWindowGFG::class.java.name == service.service.className) {
+                if (FloatingWindowService::class.java.name == service.service.className) {
                     return true
                 }
             }
             return false
         }
+
 
     private fun requestOverlayDisplayPermission() {
         // An AlertDialog is created

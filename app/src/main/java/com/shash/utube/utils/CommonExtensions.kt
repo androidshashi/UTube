@@ -11,11 +11,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.fragment.app.Fragment
 import com.shash.utube.utils.Constants.YOUTUBE_URL
-import com.shash.utube.view.FloatingWindowGFG
+import com.shash.utube.service.FloatingWindowService
 
 /**
  * Share MULTIPLE the file
@@ -31,7 +33,7 @@ fun Context.shareText(text: String) {
     val shareIntent = Intent.createChooser(sendIntent, null)
     startActivity(shareIntent)
 }
- fun Activity.isMyServiceRunning(): Boolean {
+fun Activity.isMyServiceRunning(): Boolean {
     // The ACTIVITY_SERVICE is needed to retrieve a
     // ActivityManager for interacting with the global system
     // It has a constant String value "activity".
@@ -45,7 +47,7 @@ fun Context.shareText(text: String) {
     for (service in manager!!.getRunningServices(Int.MAX_VALUE)) {
 
         // If this service is found as a running, it will return true or else false.
-        if (FloatingWindowGFG::class.java.name == service.service.className) {
+        if (FloatingWindowService::class.java.name == service.service.className) {
             return true
         }
     }
@@ -104,6 +106,19 @@ fun Activity.checkOverlayDisplayPermission(): Boolean {
 
 fun Activity.showToast(text:String){
     Toast.makeText(this,text,Toast.LENGTH_SHORT).show()
+}
+
+fun Fragment.hideKeyboard() {
+    view?.let { activity?.hideKeyboard(it) }
+}
+
+fun Activity.hideKeyboard() {
+    hideKeyboard(currentFocus ?: View(this))
+}
+
+fun Context.hideKeyboard(view: View) {
+    val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+    inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
 object Common {

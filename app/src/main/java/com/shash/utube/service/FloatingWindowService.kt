@@ -1,5 +1,6 @@
-package com.shash.utube.view
+package com.shash.utube.service
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Context
@@ -17,26 +18,30 @@ import android.view.View.*
 import android.webkit.JsResult
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.ImageView
-import android.widget.RelativeLayout
+import android.widget.*
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.shash.utube.R
 import com.shash.utube.utils.*
-import com.shash.utube.utils.VideoEnabledWebChromeClient.ToggledFullscreenCallback
+import com.shash.utube.view.MainActivity
 
-
-class FloatingWindowGFG : Service() {
-    //The reference variables for the
-    //ViewGroup, WindowManager.LayoutParams, WindowManager, Button, EditText classes are created
+/**
+ * This class is responsible for Floating dialog in which YouTube website will be rendered
+ * @author: AndroidShashi
+ */
+class FloatingWindowService : Service() {
+    //The reference variables
     private var floatView: ViewGroup? = null
     private var LAYOUT_TYPE = 0
     private var floatWindowLayoutParam: WindowManager.LayoutParams? = null
     private var windowManager: WindowManager? = null
     private var toggleBtn: ImageView? = null
+    private var bottomLayout: LinearLayout? = null
     private var backBtn: ImageView? = null
     private var moveBtn: ImageView? = null
     private var closeBtn: ImageView? = null
+    private var shareBtn: ImageView? = null
+    private var searchET: EditText? = null
     private var webView: VideoEnabledWebView? = null
     private var height: Int = 0
     private var width: Int = 0
@@ -50,7 +55,7 @@ class FloatingWindowGFG : Service() {
     companion object {
         const val channelID = "Utube_service_channel"
         const val title = "Utube is running..."
-        const val text = "Enjoy in background."
+        const val text = "Enjoy YouTube in background."
     }
 
     //As FloatingWindowGFG inherits Service class, it actually overrides the onBind method
@@ -59,18 +64,14 @@ class FloatingWindowGFG : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        //Show foreground notification above android 8.0
         generateForegroundNotification()
         return START_STICKY
-
-        //Normal Service To test sample service comment the above    generateForegroundNotification() && return START_STICKY
-        // Uncomment below return statement And run the app.
-//        return START_NOT_STICKY
     }
 
-    //Notififcation for ON-going
     private var iconNotification: Bitmap? = null
     private var notification: Notification? = null
-    var mNotificationManager: NotificationManager? = null
+    private var mNotificationManager: NotificationManager? = null
     private val mNotificationId = 123333
 
     private fun generateForegroundNotification() {
@@ -123,13 +124,18 @@ class FloatingWindowGFG : Service() {
     override fun onCreate() {
         super.onCreate()
 
+        //Initialize all the required views
         initViews()
 
-        listeners();
+        //Register listeners for click and other events
+        listeners()
 
+        //Handle youtube website inside Android Web View
         initWebView()
     }
 
+
+    @SuppressLint("SetJavaScriptEnabled")
     private fun initWebView() {
 
         mWebChromeClient = object : VideoEnabledWebChromeClient(
@@ -170,9 +176,6 @@ class FloatingWindowGFG : Service() {
             }
         }
 
-
-
-
         webView?.apply {
             webChromeClient = mWebChromeClient
             webViewClient =  InsideWebViewClient()
@@ -180,13 +183,12 @@ class FloatingWindowGFG : Service() {
 
         // this will enable the javascript settings, it can also allow xss vulnerabilities
         webView?.settings?.apply{
-
             javaScriptEnabled = true
             // if you want to enable zoom feature
             setSupportZoom(true)
             // on below line setting file access to true.
-            allowFileAccess = true;
-            domStorageEnabled = true;
+            allowFileAccess = true
+            domStorageEnabled = true
         }
 
         Log.d("Current url", Common.currentUrl)
@@ -196,22 +198,29 @@ class FloatingWindowGFG : Service() {
 
     }
 
+    /**
+     * Handle minimized and full screen view
+     */
     private fun toggleView(){
         webView?.visibility = VISIBLE
         if (isMinimized) {
             updateWindowSize(h = 1.0f, w = 1.0f, keyboard = true)
             isMinimized = false
+            searchET?.visibility = VISIBLE
             toggleBtn?.setImageResource(R.drawable.ic_minimize)
         } else {
             updateWindowSize()
             isMinimized = true
+            searchET?.visibility = GONE
             toggleBtn?.setImageResource(R.drawable.ic_max)
         }
     }
 
+    /**
+     * Listen for all the user interaction events
+     */
     private fun listeners() {
         toggleBtn?.setOnClickListener {
-
             toggleView()
         }
 
@@ -233,6 +242,31 @@ class FloatingWindowGFG : Service() {
                 if (it.canGoBack()) it.goBack()
             }
         }
+
+        searchET?.setOnKeyListener(OnKeyListener { v, keyCode, event -> // If the event is a key-down event on the "enter" button
+            if (event.action == KeyEvent.ACTION_DOWN &&
+                keyCode == KeyEvent.KEYCODE_ENTER
+            ) {
+                if (searchET!!.text.isEmpty())
+                {
+                    return@OnKeyListener true
+                }
+                // Perform action on key press
+                webView?.loadUrl(searchET!!.text.trim().toString())
+                webView?.context?.hideKeyboard(webView!!)
+                return@OnKeyListener true
+            }
+            false
+        })
+
+        shareBtn?.setOnClickListener {
+
+            if(!isMinimized){
+                toggleView()
+            }
+            it.context.shareText(webView?.url.toString())
+        }
+
 
         //The button that helps to maximize the app
         closeBtn?.setOnClickListener(View.OnClickListener { //stopSelf() method is used to stop the service if
@@ -315,9 +349,10 @@ class FloatingWindowGFG : Service() {
     }
 
 
-
+    /**
+     * Initialize all the views
+     */
     private fun initViews() {
-
 
         //The screen height and width are calculated, cause
         //the height and width of the floating window is set depending on this
@@ -340,7 +375,10 @@ class FloatingWindowGFG : Service() {
         backBtn = floatView!!.findViewById(R.id.backIV)
         closeBtn = floatView!!.findViewById(R.id.closeIV)
         moveBtn = floatView!!.findViewById(R.id.moveIV)
+        shareBtn = floatView!!.findViewById(R.id.shareIV)
+        searchET = floatView!!.findViewById(R.id.searchET)
         webView = floatView!!.findViewById(R.id.webView)
+        bottomLayout = floatView!!.findViewById(R.id.bottomLayout)
 
         nonVideoLayout = floatView!!.findViewById(R.id.nonVideoLayout) // Your own view, read class comments
 
@@ -387,12 +425,14 @@ class FloatingWindowGFG : Service() {
         windowManager!!.addView(floatView, floatWindowLayoutParam)
     }
 
-    private fun updateWindowSize(h: Float = 0.18f, w: Float = 0.45f, keyboard: Boolean = false) {
-
+    /**
+     * Update the floating window size
+     */
+    private fun updateWindowSize(h: Float?=null, w: Float = 0.45f, keyboard: Boolean = false) {
         val floatWindowLayoutParamUpdateFlag: WindowManager.LayoutParams =
             (floatWindowLayoutParam as WindowManager.LayoutParams).also {
                 it.width = (width * w).toInt()
-                it.height = (height * h).toInt()
+                it.height = if(h==null) bottomLayout!!.height  else (height * h).toInt()
                 it.type = LAYOUT_TYPE
                 if (keyboard) {
                     it.flags =

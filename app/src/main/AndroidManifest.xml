@@ -32,7 +32,7 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-        <service android:name=".view.FloatingWindowGFG"/>
+        <service android:name=".service.FloatingWindowService"/>
     </application>
 
 </manifest>
