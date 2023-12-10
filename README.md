@@ -1,6 +1,7 @@
-### This is only for educational purpose and not meant for use for personal profit.
-
 ### UTube - Play youtube video in background.
+
+#### This is only for educational purpose and not meant for use for personal profit.
+
 
 This project is demonstration of Background Service in android along with floating window service.
 
@@ -35,5 +36,4 @@ I went through many articles, idea and then suddenly one day I thought of this.
 
 ### Improvements
 1. Working on removing ads (Tried a lot of ways but not getting breakthrough.)
-
 
